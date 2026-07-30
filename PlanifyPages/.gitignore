@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+server/node_modules/
+PlanifyPages/node_modules/
+
+# Environment variables
+.env
+server/.env
+PlanifyPages/.env
+
+# Build files
+build/
+dist/
+PlanifyPages/build/
+
+# Editor files
+.vscode/
+.idea/
