@@ -12,6 +12,7 @@ import SignUp from './components/signup/SignUp'
 import MainPage from './components/mainpage/MainPage'
 import ProtectedRoute from './components/protectedroutes/ProtectedRoute'
 import MyProfile from './components/myprofile/MyProfile'
+import ForgotPassword from './components/forgotpassword/ForgotPassword'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 
@@ -27,6 +28,7 @@ const App = () => {
           <Route path='/mainpage' element={<MainPage></MainPage>} />
           <Route path="/signin" element={<SignIn></SignIn>} />
           <Route path="/signup" element={<SignUp></SignUp>} />
+          <Route path="/forgotpassword" element={<ForgotPassword></ForgotPassword>} />
 
           <Route path="/" element={<ProtectedRoute> <Layout /> </ProtectedRoute>} >
             <Route path="tasks" element={<Tasks></Tasks>} />

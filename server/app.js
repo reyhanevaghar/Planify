@@ -451,7 +451,6 @@ app.get('/profile', verifyToken, async (req, res) => {
         const request = new sql.Request();
         request.input('userId', sql.Int, userId);
 
-        // اصلاح شد: استفاده از نام دقیق ستون‌ها (FullName, PhoneNumber, Bio)
         const data = await request.query(`
             SELECT id, username, email, FullName, PhoneNumber, Bio
             FROM Table_Users
@@ -478,7 +477,6 @@ app.put('/profile', verifyToken, async (req, res) => {
     console.log('putttt profile ')
     try {
         const userId = req.user.id;
-        // اصلاح شد: گرفتن PhoneNumber از بدنه درخواست
         var { FullName, Bio, PhoneNumber } = req.body;
 
         FullName = (FullName ?? "").trim();
@@ -496,9 +494,8 @@ app.put('/profile', verifyToken, async (req, res) => {
         request.input('userId', sql.Int, userId);
         request.input('FullName', sql.NVarChar, FullName || null);
         request.input('Bio', sql.NVarChar, Bio || null);
-        request.input('PhoneNumber', sql.NVarChar, PhoneNumber || null); // اضافه شدن پارامتر تلفن
+        request.input('PhoneNumber', sql.NVarChar, PhoneNumber || null)
 
-        // اصلاح شد: اضافه شدن PhoneNumber به کوئری آپدیت دیتابیس
         await request.query(`
             UPDATE Table_Users
             SET FullName = @FullName,
@@ -517,6 +514,85 @@ app.put('/profile', verifyToken, async (req, res) => {
         return res.send({ result: true, user: data.recordset[0] });
     } catch (err) {
         console.error('update profile error:', err);
+        return res.status(500).send({ result: false, message: 'SERVER_ERROR' });
+    }
+});
+// ----------------------------------------------------------------------------------------------
+// 1. Forgot Password - درخواست ریست رمز عبور
+app.post('/forgot-password', async (req, res) => {
+    try {
+        let { email } = req.body;
+        email = email?.trim().toLowerCase();
+
+        if (!email) {
+            return res.status(400).send({ result: false, message: 'Email is required' });
+        }
+
+        const request = new sql.Request();
+        request.input('email', sql.NVarChar, email);
+        const userRes = await request.query(`SELECT id, email FROM Table_Users WHERE email = @email`);
+
+        if (userRes.recordset.length === 0) {
+            return res.status(404).send({ result: false, message: 'User with this email does not exist' });
+        }
+
+        const user = userRes.recordset[0];
+
+        // ساخت یک توکن موقت با انقضای 15 دقیقه مخصوص ریست پسورد
+        const resetToken = jwt.sign(
+            { id: user.id, email: user.email, purpose: 'reset-password' },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' }
+        );
+
+        return res.send({
+            result: true,
+            message: 'Reset token generated successfully',
+            resetToken: resetToken // برای حالت توسعه/سریع، توکن مستقیم به فرانت برمی‌گرده
+        });
+    } catch (err) {
+        console.error('forgot-password error:', err);
+        return res.status(500).send({ result: false, message: 'SERVER_ERROR' });
+    }
+});
+
+// ----------------------------------------------------------------------------------------------
+// 2. Reset Password 
+app.post('/reset-password', async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+
+        if (!token || !newPassword) {
+            return res.status(400).send({ result: false, message: 'Token and new password are required' });
+        }
+
+        // token 
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+            if (decoded.purpose !== 'reset-password') {
+                return res.status(400).send({ result: false, message: 'Invalid token purpose' });
+            }
+        } catch (err) {
+            return res.status(400).send({ result: false, message: 'Token expired or invalid' });
+        }
+
+        // hash new password 
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        const request = new sql.Request();
+        request.input('userId', sql.Int, decoded.id);
+        request.input('password', sql.NVarChar, hashedPassword);
+
+        await request.query(`
+            UPDATE Table_Users
+            SET password = @password
+            WHERE id = @userId
+        `);
+
+        return res.send({ result: true, message: 'Password reset successfully' });
+    } catch (err) {
+        console.error('reset-password error:', err);
         return res.status(500).send({ result: false, message: 'SERVER_ERROR' });
     }
 });

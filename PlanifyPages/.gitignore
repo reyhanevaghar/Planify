@@ -2,6 +2,8 @@
 node_modules/
 server/node_modules/
 PlanifyPages/node_modules/
+node_modules/
+
 
 # Environment variables
 .env

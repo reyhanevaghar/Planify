@@ -276,6 +276,15 @@ const SignIn = () => {
                                 </div>
                                 <ErrorMessage name="password" component={ShowErrorMessage} />
                             </div>
+                            <div style={{ textAlign: "right", marginTop: "-8px", marginBottom: "16px" }}>
+                                <Link
+                                    to="/forgotpassword"
+                                    style={{ color: "#60a5fa", fontSize: "13px", textDecoration: "none" }}
+                                >
+                                    Forgot Password?
+                                </Link>
+                            </div>
+
                             <button type="submit" style={styles.submitBtn}>Login</button>
                             <p style={styles.bottomText}>
                                 Don't have an account?
